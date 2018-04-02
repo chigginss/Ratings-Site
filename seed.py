@@ -1,9 +1,7 @@
 """Utility file to seed ratings database from MovieLens data in seed_data/"""
 
 from sqlalchemy import func
-from model import User, Rating, Movie
-
-from model import connect_to_db, db
+from model import User, Rating, Movie, connect_to_db, db
 from server import app
 from datetime import datetime
 
@@ -20,10 +18,10 @@ def load_users():
     # Read u.user file and insert data
     for row in open("seed_data/u.user"):
         row = row.rstrip()
-        user_id, age, gender, occupation, zipcode = row.split("|")
+        user_id, age, _, _, zipcode = row.split("|")
 
-        user = User(user_id=user_id,
-                    age=age,
+        user = User(user_id=int(user_id),
+                    age=int(age),
                     zipcode=zipcode)
 
         # We need to add to the session or it won't ever be stored
@@ -48,7 +46,7 @@ def load_movies():
         released_at = datetime.strptime(row[2], "%d-%b-%Y")
         url = row[4]
 
-        movie = Movie(movie_id=movie_id,
+        movie = Movie(movie_id=int(movie_id),
                       title=title,
                       released_at=released_at,
                       imbd_url=url)
@@ -68,11 +66,11 @@ def load_ratings():
     for row in open("seed_data/u.data"):
         row = row.rstrip()
 
-        movie_id, user_id, score, _ = row.split('\t')
+        user_id, movie_id, score, _ = row.split('\t')
 
-        rating = Rating(movie_id=movie_id,
-                        user_id=user_id,
-                        score=score)
+        rating = Rating(user_id=int(user_id),
+                        movie_id=int(movie_id),
+                        score=int(score))
 
         db.session.add(rating)
 
@@ -103,8 +101,6 @@ def set_val_movie_id():
     query = "SELECT setval('movies_movie_id_seq', :new_id)"
     db.session.execute(query, {'new_id': max_id + 1})
     db.session.commit()
-
-
 
 
 if __name__ == "__main__":

@@ -23,6 +23,8 @@ class User(db.Model):
     age = db.Column(db.Integer)
     zipcode = db.Column(db.String(15))
 
+    ratings = db.relationship('Rating')
+
     def __repr__(self):
         """Representation of User instance"""
 
@@ -38,6 +40,8 @@ class Movie(db.Model):
     released_at = db.Column(db.DateTime, nullable=False)
     imbd_url = db.Column(db.String(256))
 
+    ratings = db.relationship('Rating')
+
     def __repr__(self):
         """Representation of Movie instance"""
 
@@ -51,9 +55,14 @@ class Rating(db.Model):
     __tablename__ = "ratings"
 
     rating_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    movie_id = db.Column(db.Integer, nullable=False)
-    user_id = db.Column(db.Integer, nullable=False)
+    movie_id = db.Column(db.Integer, db.ForeignKey('movies.movie_id'),
+                         nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'),
+                        nullable=False)
     score = db.Column(db.Integer, nullable=False)
+
+    user = db.relationship('User')
+    movie = db.relationship('Movie')
 
     def __repr__(self):
         """Representation of User instance"""
