@@ -26,10 +26,7 @@ class User(db.Model):
     def __repr__(self):
         """Representation of User instance"""
 
-        return """\
-<User: user_id={user_id}, email={email}, password={password}, age={age}, \
-zipcode={zipcode}>""".format(user_id=user_id, email=email, password=password,
-                             age=age, zipcode=zipcode)
+        return "<User: user_id={}, email={}>".format(self.user_id, self.email)
 
 
 class Movie(db.Model):
@@ -37,17 +34,15 @@ class Movie(db.Model):
     __tablename__ = "movies"
 
     movie_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    title = db.Column(db.String(512), nullable=False)
+    title = db.Column(db.String(128), nullable=False)
     released_at = db.Column(db.DateTime, nullable=False)
     imbd_url = db.Column(db.String(256))
 
     def __repr__(self):
         """Representation of Movie instance"""
 
-        return """\
-<Movie: movie_id={movie_id}, title={title}, released_at={released_at}, \
-imbd_url={imbd_url}>""".format(movie_id=movie_id, title=title,
-                               released_at=released_at, imbd_url=imbd_url)
+        return "<Movie: movie_id={}, title={}>".format(self.movie_id,
+                                                       self.title)
 
 
 class Rating(db.Model):
@@ -63,10 +58,8 @@ class Rating(db.Model):
     def __repr__(self):
         """Representation of User instance"""
 
-        return """\
-<Rating: rating_id={rating_id}, movie_id={movie_id}, user_id={user_id}, \
-score={score}>""".format(rating_id=rating_id, movie_id=movie_id,
-                         user_id=user_id, score=score)
+        return "<Rating: rating_id={}, movie_id={}, user_id={}, score={}>".format(
+            self.rating_id, self.movie_id, self.user_id, self.score)
 
 
 ##############################################################################
