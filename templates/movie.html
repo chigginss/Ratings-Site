@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <p>Title: {{ movie.title }}</p>
+    <p>Release Date: {{ movie.released_at }}</p>
+    <p>IMDB link: <a href='{{ movie.imbd_url}}'>{{ movie.imbd_url }}</a></p>
+
+    {% if movie.ratings %}
+        <p>Average Rating: {{ movie.ratings|sum(attribute='score') / movie.ratings|length }}</p>
+        <ul>
+            {% for rating in movie.ratings %}
+            <li>{{ rating.score }}</li>
+            {% endfor %}
+         </ul>
+    {% endif %}
+
+{% endblock %}
