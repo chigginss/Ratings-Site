@@ -33,6 +33,7 @@ class User(db.Model):
 
 class Movie(db.Model):
     """Movie object"""
+
     __tablename__ = "movies"
 
     movie_id = db.Column(db.Integer, autoincrement=True, primary_key=True)

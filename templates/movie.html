@@ -2,15 +2,56 @@
 
 {% block content %}
 
+    <!-- Display movie info -->
     <p>Title: {{ movie.title }}</p>
     <p>Release Date: {{ movie.released_at }}</p>
     <p>IMDB link: <a href='{{ movie.imbd_url}}'>{{ movie.imbd_url }}</a></p>
 
+    <!-- Check for logged in user -->
+    {% if 'email' in session %}
+        <form action='/add-rating/{{ movie.movie_id }}' method='POST'>
+            <label>
+                Your Rating:
+                {% if rating %}
+
+                    <!-- Display user rating if it exists -->
+                    {{ rating.score }}
+                {% endif %}
+            </label><br>
+
+            <!-- Drop-down with numbers 1 to 5 -->
+            <select name='rating'>
+                {% for i in range(1, 6) %}
+                    <option value='{{ i }}'>{{ i }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- Button text = Update Rating if rating exists
+                               else Add Rating if rating does not exist -->
+            <input type='submit'
+            value='{% if rating -%}Update{%- else -%}Add{%- endif %} Rating'>
+        </form>
+    {% endif %}
+
+    <!-- If the movie has been rated -->
     {% if movie.ratings %}
-        <p>Average Rating: {{ movie.ratings|sum(attribute='score') / movie.ratings|length }}</p>
+
+        <!-- Calculate average rating -->
+        <p>
+            Average Rating:
+            {{ movie.ratings|sum(attribute='score') / movie.ratings|length }}
+        </p>
         <ul>
+
+            <!-- Display list of ratings -->
             {% for rating in movie.ratings %}
-            <li>{{ rating.score }}</li>
+
+                <!-- Link to user page -->
+                <li>
+                    <a href='/users/{{ rating.user.user_id }}'>
+                        {{ rating.user.email }}
+                    </a> | {{ rating.score }}
+                </li>
             {% endfor %}
          </ul>
     {% endif %}

@@ -44,7 +44,8 @@ def user_list():
 def user_page(user_id):
     """ Show user profile """
 
-    user = User.query.filter_by(user_id=user_id).first()
+    user = User.query.filter_by(user_id=user_id).options(
+        db.joinedload('ratings')).first()
     return render_template('user.html', user=user)
 
 # =============================================================================
@@ -63,8 +64,41 @@ def movie_list():
 def movie_page(movie_id):
     """ Show movie details """
 
-    movie = Movie.query.filter_by(movie_id=movie_id).first()
-    return render_template('movie.html', movie=movie)
+    if 'email' in session:
+        user = User.query.filter_by(email=session['email']).first()
+        rating = Rating.query.filter_by(user_id=user.user_id,
+                                        movie_id=movie_id).first()
+    else:
+        rating = None
+
+    movie = Movie.query.filter_by(movie_id=movie_id).options(
+        db.joinedload('ratings')).first()
+    return render_template('movie.html', movie=movie, rating=rating)
+
+# =============================================================================
+# Ratings
+
+
+@app.route('/add-rating/<movie_id>', methods=['POST'])
+def add_rating(movie_id):
+    """ Add new rating"""
+
+    score = request.form.get('rating')
+    user = User.query.filter_by(email=session['email']).first()
+    rating = Rating.query.filter_by(user_id=user.user_id,
+                                    movie_id=movie_id).first()
+
+    if rating is None:
+        rating = Rating(score=score, user_id=user.user_id, movie_id=movie_id)
+        db.session.add(rating)
+        flash('Rating Added')
+    else:
+        rating.score = score
+        flash('Rating Updated')
+
+    db.session.commit()
+
+    return redirect('/movies/{}'.format(movie_id))
 
 # =============================================================================
 # Registration
@@ -125,7 +159,7 @@ def login_process():
 
     if password == user.password:
         session['email'] = email
-        flash('Logged in')
+        flash('Logged in as {}'.format(email))
         return redirect('/users/{}'.format(user.user_id))
 
     flash('Invalid password')
