@@ -45,7 +45,7 @@ def user_page(user_id):
     """ Show user profile """
 
     user = User.query.filter_by(user_id=user_id).options(
-        db.joinedload('ratings')).first()
+        db.joinedload('ratings')).one()
     return render_template('user.html', user=user)
 
 # =============================================================================
@@ -65,14 +65,14 @@ def movie_page(movie_id):
     """ Show movie details """
 
     if 'email' in session:
-        user = User.query.filter_by(email=session['email']).first()
+        user = User.query.filter_by(email=session['email']).one()
         rating = Rating.query.filter_by(user_id=user.user_id,
                                         movie_id=movie_id).first()
     else:
         rating = None
 
     movie = Movie.query.filter_by(movie_id=movie_id).options(
-        db.joinedload('ratings')).first()
+        db.joinedload('ratings')).one()
     return render_template('movie.html', movie=movie, rating=rating)
 
 # =============================================================================
@@ -84,7 +84,7 @@ def add_rating(movie_id):
     """ Add new rating"""
 
     score = request.form.get('rating')
-    user = User.query.filter_by(email=session['email']).first()
+    user = User.query.filter_by(email=session['email']).one()
     rating = Rating.query.filter_by(user_id=user.user_id,
                                     movie_id=movie_id).first()
 
@@ -175,6 +175,44 @@ def logout_process():
         flash("Logged out")
 
     return redirect('/')
+
+# =============================================================================
+# Update User Info
+
+
+@app.route('/update-user', methods=['GET'])
+def update_form():
+    """Show Update User Form"""
+
+    return render_template('update_form.html')
+
+
+@app.route('/update-user', methods=['POST'])
+def update_process():
+    """Update user details"""
+
+    email = request.form.get('email')
+    password = request.form.get('password')
+    age = request.form.get('age')
+    zipcode = request.form.get('zipcode')
+
+    user = User.query.filter_by(email=session['email']).one()
+
+    if email != '':
+        user.email = email
+        session['email'] = email
+    if password != '':
+        user.password = password
+    if age != '':
+        user.age = age
+    if zipcode != '':
+        user.zipcode = zipcode
+
+    db.session.commit()
+
+    flash('User info updated')
+
+    return redirect('/users/{}'.format(user.user_id))
 
 
 if __name__ == '__main__':

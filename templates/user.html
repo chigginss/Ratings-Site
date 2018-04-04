@@ -6,6 +6,8 @@
     <p>Age: {{ user.age }}</p>
     <p>Zipcode: {{ user.zipcode }}</p>
 
+    <a href='/update-user'>Update Details</a>
+
     {% if user.ratings %}
         <ul>
             {% for rating in user.ratings %}

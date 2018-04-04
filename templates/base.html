@@ -9,12 +9,18 @@
         <!-- Page title -->
         <h1>Ratings</h1>
 
-        <!-- User login / logout -->
-        {% if 'email' in session %}
-            <a href='/logout'>Logout</a>
-        {% else %}
-            <a href='/login'>Login</a>
-        {% endif %}
+        <nav>
+            <a href='/'>Home</a>
+            <a href='/movies'>Movie List</a>
+            <a href='/users'>User List</a>
+
+            <!-- User login / logout -->
+            {% if 'email' in session %}
+                <a href='/logout'>Logout</a>
+            {% else %}
+                <a href='/login'>Login</a>
+            {% endif %}
+        </nav>
 
         <!-- flash message buffer -->
         {% for message in get_flashed_messages() %}
