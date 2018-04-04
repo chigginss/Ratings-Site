@@ -31,7 +31,7 @@ class User(db.Model):
 
         return "<User: user_id={}, email={}>".format(self.user_id, self.email)
 
-    def similarity(self, other):
+    def similarity(self, other, print_list=False):
         """Find similatiry between two users"""
 
         u_ratings = {}
@@ -45,10 +45,50 @@ class User(db.Model):
             if u_rating:
                 paired_ratings.append((u_rating.score, o_rating.score))
 
+        if print_list:
+            print paired_ratings
+
         if paired_ratings:
             return correlation.pearson(paired_ratings)
 
         return 0.0
+
+    def predict_rating(self, movie):
+        """Predict users rating of movie"""
+
+        other_users = sorted([(self.similarity(rating.user), rating)
+                              for rating in movie.ratings])
+
+        # best_match = other_users[-1]
+
+        # print best_match[0], best_match[1].score, best_match[1].user
+        # print self.similarity(best_match[1].user, print_list=True)
+
+        # prediction = best_match[0] * best_match[1].score
+
+        upper_bound = 1
+        lower_bound = 0
+
+        pos_list = [sim * rating.score for sim, rating in other_users
+                    if upper_bound > sim > lower_bound]
+        pos = sum(pos_list)
+
+        neg_list = [-sim * abs(rating.score-6) for sim, rating in other_users
+                    if -upper_bound < sim < -lower_bound]
+        neg = sum(neg_list)
+
+        denominator = sum([abs(sim) for sim, _ in other_users
+                           if upper_bound > sim > lower_bound
+                           or -upper_bound < sim < -lower_bound])
+
+        print 'bounds', upper_bound, lower_bound
+        print 'pos', len(pos_list), '-', pos
+        print 'neg', len(neg_list), '-', neg
+        print 'denom', denominator
+
+        prediction = (pos + neg) / denominator
+
+        return prediction
 
 
 class Movie(db.Model):

@@ -47,6 +47,9 @@
             Average Rating:
             {{ (movie.ratings|sum(attribute='score') / movie.ratings|length)|round(1, 'common') }}
         </p>
+        <p>
+            Number of Ratings: {{ movie.ratings|length }}
+        </p>
         <ul>
 
             <!-- Display list of ratings -->
