@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <form action='/update-user' method='POST'>
+        <label>New Email:</label><input type='text' name='email'><br>
+        <label>New Password:</label><input type='password' name='password'><br>
+        <label>New Age:</label><input type='number' name='age'><br>
+        <label>New Zipcode:</label><input type='text' name='zipcode'><br>
+        <input type='submit' name='Submit'>
+    </form>
+
+{% endblock %}
