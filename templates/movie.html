@@ -11,11 +11,10 @@
     {% if 'email' in session %}
         <form action='/add-rating/{{ movie.movie_id }}' method='POST'>
             <label>
-                Your Rating:
                 {% if rating %}
-
-                    <!-- Display user rating if it exists -->
-                    {{ rating.score }}
+                    Your Rating: {{ rating.score }}
+                {% else %}
+                    We predict you will rate this movie {{ prediction }}.
                 {% endif %}
             </label><br>
 

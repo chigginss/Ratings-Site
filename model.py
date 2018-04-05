@@ -2,6 +2,7 @@
 
 from flask_sqlalchemy import SQLAlchemy
 import correlation
+import time
 
 # This is the connection to the PostgreSQL database; we're getting this through
 # the Flask-SQLAlchemy helper library. On this, we can find the `session`
@@ -31,53 +32,106 @@ class User(db.Model):
 
         return "<User: user_id={}, email={}>".format(self.user_id, self.email)
 
-    def similarity(self, other, print_list=False):
+    def similarity(self, other):
         """Find similatiry between two users"""
+
+        start_time = time.time()
+
+        # print ' enter similatiry'
 
         u_ratings = {}
         paired_ratings = []
+        # print '  init sim vals'
 
         for u_rating in self.ratings:
             u_ratings[u_rating.movie_id] = u_rating
+        # print '  get user ratings'
 
         for o_rating in other.ratings:
             u_rating = u_ratings.get(o_rating.movie_id)
             if u_rating:
                 paired_ratings.append((u_rating.score, o_rating.score))
+        # print '  get other ratings'
 
-        if print_list:
-            print paired_ratings
+        end_time = time.time()
+        time_diff = end_time - start_time
+        print time_diff
 
         if paired_ratings:
+            # print ' exit similarity - found paired_ratings'
             return correlation.pearson(paired_ratings)
 
+        # print ' exit similarity - no paired_ratings'
         return 0.0
 
     def predict_rating(self, movie):
+        """Predict user's rating of a movie."""
+
+        # print 'entering predict_rating'
+        start_time = time.time()
+
+        other_ratings = movie.ratings
+        # print ' get movie ratings'
+
+        # for loop to loop through big list from SQL query
+        # for each of those values 
+        # build a dictionary with the user_id as a key 
+        # and the value = (movie_id, score)
+        # for loop through dictionary, send the list of values to similarity
+
+
+        similarities = [
+            (self.similarity(r.user), r)
+            for r in other_ratings
+        ]
+        # print ' get similarities'
+        similarities.sort(reverse=True)
+        # print ' reverse similarities'
+
+        similarities = [(sim, r) for sim, r in similarities
+                        if sim > 0]
+        # print ' filter similarities'
+
+        if not similarities:
+            # print ' exit predict_rating - no similarities'
+            return None
+
+        numerator = sum([r.score * sim for sim, r in similarities])
+        # print ' get numerator'
+        denominator = sum([sim for sim, r in similarities])
+        # print ' get denominator'
+        end_time = time.time()
+        time_diff = end_time - start_time
+        print time_diff
+
+        # print 'exit predict_rating'
+        return numerator/denominator
+
+    def _predict_rating(self, movie):
         """Predict users rating of movie"""
 
-        other_users = sorted([(self.similarity(rating.user), rating)
-                              for rating in movie.ratings])
+        other_ratings = sorted([(self.similarity(rating.user), rating)
+                                for rating in movie.ratings])
 
-        # best_match = other_users[-1]
+        # best_match = other_ratings[-1]
 
         # print best_match[0], best_match[1].score, best_match[1].user
         # print self.similarity(best_match[1].user, print_list=True)
 
         # prediction = best_match[0] * best_match[1].score
 
-        upper_bound = 1
+        upper_bound = 1.1
         lower_bound = 0
 
-        pos_list = [sim * rating.score for sim, rating in other_users
+        pos_list = [sim * rating.score for sim, rating in other_ratings
                     if upper_bound > sim > lower_bound]
         pos = sum(pos_list)
 
-        neg_list = [-sim * abs(rating.score-6) for sim, rating in other_users
+        neg_list = [-sim * abs(rating.score-6) for sim, rating in other_ratings
                     if -upper_bound < sim < -lower_bound]
         neg = sum(neg_list)
 
-        denominator = sum([abs(sim) for sim, _ in other_users
+        denominator = sum([abs(sim) for sim, _ in other_ratings
                            if upper_bound > sim > lower_bound
                            or -upper_bound < sim < -lower_bound])
 
@@ -87,6 +141,7 @@ class User(db.Model):
         print 'denom', denominator
 
         prediction = (pos + neg) / denominator
+        # prediction = pos / denominator
 
         return prediction
 
@@ -141,6 +196,7 @@ def connect_to_db(app):
     # Configure to use our PstgreSQL database
     app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///ratings'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    # app.config['SQLALCHEMY_ECHO'] = True
     db.app = app
     db.init_app(app)
 

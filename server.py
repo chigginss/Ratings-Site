@@ -64,16 +64,22 @@ def movie_list():
 def movie_page(movie_id):
     """ Show movie details """
 
+    movie = Movie.query.filter_by(movie_id=movie_id).options(
+        db.joinedload('ratings')).one()
+
+    prediction = None
+
     if 'email' in session:
         user = User.query.filter_by(email=session['email']).one()
         rating = Rating.query.filter_by(user_id=user.user_id,
                                         movie_id=movie_id).first()
+        if rating is None:
+            prediction = user.predict_rating(movie)
     else:
         rating = None
 
-    movie = Movie.query.filter_by(movie_id=movie_id).options(
-        db.joinedload('ratings')).one()
-    return render_template('movie.html', movie=movie, rating=rating)
+    return render_template('movie.html', movie=movie, rating=rating,
+                           prediction=prediction)
 
 # =============================================================================
 # Ratings
