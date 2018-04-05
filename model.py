@@ -40,7 +40,7 @@ class User(db.Model):
         ratings = db.session.execute("""\
             SELECT movie_id, score
               FROM ratings
-             WHERE users_id = :curr_user
+             WHERE user_id = :curr_user
              ORDER BY movie_id\
             """, {'curr_user': self.user_id}).fetchall()
         u_ratings = {}
@@ -76,15 +76,12 @@ class User(db.Model):
              WHERE user_id IN (
                 SELECT user_id
                   FROM ratings
-                 WHERE movie_id IN (
-                    SELECT movie_id
-                      FROM ratings
-                     WHERE user_id = :curr_user
-                    )
+                 WHERE movie_id = :movie_id
                 )
                AND user_id != :curr_user
              ORDER BY user_id, movie_id\
-            """, {'curr_user': self.user_id}).fetchall()
+            """, {'curr_user': self.user_id,
+                  'movie_id': movie.movie_id}).fetchall()
 
         user_movie_scores = {}
         for other_rating in other_ratings:
