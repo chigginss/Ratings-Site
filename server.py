@@ -71,15 +71,64 @@ def movie_page(movie_id):
 
     if 'email' in session:
         user = User.query.filter_by(email=session['email']).one()
-        rating = Rating.query.filter_by(user_id=user.user_id,
-                                        movie_id=movie_id).first()
-        if rating is None:
+        user_rating = Rating.query.filter_by(user_id=user.user_id,
+                                             movie_id=movie_id).first()
+        if user_rating is None:
             prediction = user.predict_rating(movie)
     else:
-        rating = None
+        user_rating = None
 
-    return render_template('movie.html', movie=movie, rating=rating,
-                           prediction=prediction)
+    beratement = get_eye_beratement(prediction, user_rating, movie)
+
+    print movie, user_rating, prediction, beratement
+    return render_template('movie.html', movie=movie, rating=user_rating,
+                           prediction=prediction, beratement=beratement)
+
+
+def get_eye_beratement(prediction, user_rating, movie):
+    """Get berated by the eye"""
+
+    if prediction:
+        effective_rating = prediction
+    elif user_rating:
+        effective_rating = user_rating.score
+    else:
+        effective_rating = None
+    print 'eye effective:', effective_rating
+
+    the_eye = (User.query.filter_by(email="the-eye@of-judgment.com")
+                         .one())
+    eye_rating = Rating.query.filter_by(
+        user_id=the_eye.user_id, movie_id=movie.movie_id).first()
+
+    if eye_rating is None:
+        eye_rating = the_eye.predict_rating(movie)
+    else:
+        eye_rating = eye_rating.score
+    print 'eye eye_rating:', eye_rating
+
+    if eye_rating and effective_rating:
+        difference = abs(eye_rating - effective_rating)
+    else:
+        difference = None
+    print 'eye diff:', difference
+
+    BERATEMENT_MESSAGES = [
+        "I suppose you don't have such bad taste after all.",
+        "I regret every decision that I've ever made that has " +
+        "brought me to listen to your opinion.",
+        "Words fail me, as your taste in movies has clearly " +
+        "failed you.",
+        "That movie is great. For a clown to watch. Idiot.",
+        "Words cannot express the awfulness of your taste."
+    ]
+
+    if difference is not None:
+        beratement = BERATEMENT_MESSAGES[int(difference)]
+    else:
+        beratement = None
+
+    return beratement
 
 # =============================================================================
 # Ratings

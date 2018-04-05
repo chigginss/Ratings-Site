@@ -32,30 +32,31 @@ class User(db.Model):
 
         return "<User: user_id={}, email={}>".format(self.user_id, self.email)
 
-    def similarity(self, other):
+    def similarity(self, movie_scores):
         """Find similatiry between two users"""
-
-        start_time = time.time()
 
         # print ' enter similatiry'
 
+        ratings = db.session.execute("""\
+            SELECT movie_id, score
+              FROM ratings
+             WHERE users_id = :curr_user
+             ORDER BY movie_id\
+            """, {'curr_user': self.user_id}).fetchall()
         u_ratings = {}
         paired_ratings = []
         # print '  init sim vals'
 
-        for u_rating in self.ratings:
-            u_ratings[u_rating.movie_id] = u_rating
+        for movie_id, score in ratings:
+            u_ratings[movie_id] = score
         # print '  get user ratings'
 
-        for o_rating in other.ratings:
-            u_rating = u_ratings.get(o_rating.movie_id)
+        for movie_id, o_score in movie_scores.items():
+            u_rating = u_ratings.get(movie_id)
             if u_rating:
-                paired_ratings.append((u_rating.score, o_rating.score))
+                paired_ratings.append((u_ratings[movie_id], o_score))
         # print '  get other ratings'
-
-        end_time = time.time()
-        time_diff = end_time - start_time
-        print time_diff
+        # print time_diff
 
         if paired_ratings:
             # print ' exit similarity - found paired_ratings'
@@ -67,28 +68,45 @@ class User(db.Model):
     def predict_rating(self, movie):
         """Predict user's rating of a movie."""
 
-        # print 'entering predict_rating'
         start_time = time.time()
 
-        other_ratings = movie.ratings
-        # print ' get movie ratings'
+        other_ratings = db.session.execute("""\
+            SELECT user_id, movie_id, score
+              FROM ratings
+             WHERE user_id IN (
+                SELECT user_id
+                  FROM ratings
+                 WHERE movie_id IN (
+                    SELECT movie_id
+                      FROM ratings
+                     WHERE user_id = :curr_user
+                    )
+                )
+               AND user_id != :curr_user
+             ORDER BY user_id, movie_id\
+            """, {'curr_user': self.user_id}).fetchall()
 
-        # for loop to loop through big list from SQL query
-        # for each of those values 
-        # build a dictionary with the user_id as a key 
-        # and the value = (movie_id, score)
-        # for loop through dictionary, send the list of values to similarity
+        user_movie_scores = {}
+        for other_rating in other_ratings:
+            user_id, movie_id, score = other_rating
 
+            if user_id not in user_movie_scores:
+                user_movie_scores[user_id] = {}
 
-        similarities = [
-            (self.similarity(r.user), r)
-            for r in other_ratings
-        ]
+            user_movie_scores[user_id][movie_id] = score
+
+        similarities = []
+        for user_id, other_ratings in user_movie_scores.items():
+            similarities.append(
+                (self.similarity(other_ratings),
+                 user_movie_scores[user_id][movie.movie_id])
+                )
+
         # print ' get similarities'
         similarities.sort(reverse=True)
         # print ' reverse similarities'
 
-        similarities = [(sim, r) for sim, r in similarities
+        similarities = [(sim, score) for sim, score in similarities
                         if sim > 0]
         # print ' filter similarities'
 
@@ -96,9 +114,9 @@ class User(db.Model):
             # print ' exit predict_rating - no similarities'
             return None
 
-        numerator = sum([r.score * sim for sim, r in similarities])
+        numerator = sum([score * sim for sim, score in similarities])
         # print ' get numerator'
-        denominator = sum([sim for sim, r in similarities])
+        denominator = sum([sim for sim, _ in similarities])
         # print ' get denominator'
         end_time = time.time()
         time_diff = end_time - start_time

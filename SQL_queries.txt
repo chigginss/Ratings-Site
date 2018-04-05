@@ -1,0 +1,20 @@
+
+
+SELECT user_id, movie_id, score
+  FROM ratings
+ WHERE user_id IN (
+    SELECT user_id
+      FROM ratings
+     WHERE movie_id IN (
+        SELECT movie_id
+          FROM ratings
+         WHERE user_id = :curr_user
+        )
+    )
+   AND user_id != :curr_user
+ ORDER BY user_id, movie_id
+
+SELECT movie_id, score
+  FROM ratings
+ WHERE users_id = :curr_user
+ ORDER BY movie_id

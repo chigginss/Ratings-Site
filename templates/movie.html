@@ -17,6 +17,9 @@
                     We predict you will rate this movie {{ prediction }}.
                 {% endif %}
             </label><br>
+            {% if beratement %}
+                <label>THE EYE says: {{ beratement }}</label><br>
+            {% endif %}
 
             <!-- Drop-down with numbers 1 to 5 -->
             <select name='rating'>
